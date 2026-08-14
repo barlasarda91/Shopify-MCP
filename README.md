@@ -70,7 +70,15 @@ Any Node.js host works. The repo includes a `Dockerfile`, so container platforms
 
 (For a legacy admin custom app, set `SHOPIFY_ACCESS_TOKEN` instead of the client ID/secret.)
 
-The container listens on `PORT` (default 3000) and serves the MCP endpoint at `/mcp/<MCP_AUTH_TOKEN>`, plus a `/healthz` health check.
+The container listens on `PORT` (default 3000) and serves:
+
+- `/mcp/<MCP_AUTH_TOKEN>` — the MCP endpoint for claude.ai
+- `/dashboard/<MCP_AUTH_TOKEN>` — a live dashboard webpage (see below)
+- `/healthz` — health check
+
+### Dashboard
+
+`https://your-app.example.com/dashboard/<MCP_AUTH_TOKEN>` is a bookmarkable web dashboard that pulls live data from Shopify on every load: orders and revenue for today and the last 7 days, new customer signups, an orders-per-day chart, and tables of recent orders (with payment/fulfillment status) and recent signups. It auto-refreshes every 2 minutes and supports light/dark mode. The same `MCP_AUTH_TOKEN` protects it — treat the URL as confidential.
 
 To run it directly instead of via Docker: `npm install && npm run build && npm run start:http`.
 

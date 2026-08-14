@@ -3,6 +3,7 @@ import express from "express";
 import type { Request, Response } from "express";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { createServer } from "./server.js";
+import { renderDashboard, renderErrorPage } from "./dashboard.js";
 
 /**
  * Remote (web-accessible) entry point. Exposes the MCP server over the
@@ -86,6 +87,23 @@ app.post("/mcp", handleMcpRequest);
 app.post("/mcp/:token", handleMcpRequest);
 app.get(["/mcp", "/mcp/:token"], methodNotAllowed);
 app.delete(["/mcp", "/mcp/:token"], methodNotAllowed);
+
+async function handleDashboard(req: Request, res: Response): Promise<void> {
+  if (!isAuthorized(req)) {
+    res.status(401).send("Unauthorized");
+    return;
+  }
+  try {
+    res.type("html").send(await renderDashboard());
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Error rendering dashboard:", error);
+    res.status(500).type("html").send(renderErrorPage(message));
+  }
+}
+
+app.get("/dashboard", handleDashboard);
+app.get("/dashboard/:token", handleDashboard);
 
 app.get("/healthz", (_req, res) => {
   res.json({ status: "ok" });
