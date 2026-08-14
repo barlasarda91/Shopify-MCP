@@ -26,13 +26,16 @@ It runs in two modes from the same codebase:
 
 Read tools accept Shopify search query syntax (e.g. `status:active`, `fulfillment_status:unfulfilled`, `created_at:>2026-01-01`) and IDs may be given as bare numbers or full `gid://shopify/...` IDs.
 
-## Get a Shopify Admin API access token
+## Get Shopify API credentials
 
-Both modes need an Admin API token:
+Both modes need Admin API credentials. There are two kinds, depending on how your app was created; the server supports both.
 
-1. In your Shopify admin, go to **Settings → Apps and sales channels → Develop apps**.
-2. Click **Create an app** (enable custom app development first if prompted) and give it a name like `claude-mcp`.
-3. Under **Configuration → Admin API integration**, grant the scopes you want the server to have:
+### Dev Dashboard app (current Shopify flow)
+
+Shopify has deprecated creating custom apps inside the store admin — new apps are created in the [Dev Dashboard](https://dev.shopify.com) and authenticate with a client ID/secret. The server exchanges these for access tokens automatically (client credentials grant) and refreshes them before their 24-hour expiry.
+
+1. In the Dev Dashboard, create an app (the "API-only, no admin UI" path is a good fit).
+2. Configure the **Admin API access scopes** you want the server to have:
    - `read_products`, `write_products`
    - `read_orders`
    - `read_customers`
@@ -40,8 +43,15 @@ Both modes need an Admin API token:
    - `read_discounts`, `write_discounts`
    - `read_locations`
 
-   (Only grant `write_*` scopes if you want Claude to be able to make changes. With read-only scopes, the write tools will return permission errors and everything else works.)
-4. Click **Install app**, then reveal and copy the **Admin API access token** (starts with `shpat_`). It is shown only once.
+   (Only grant `write_*` scopes if you want Claude to be able to make changes. Scopes lock at install time — changing them later means releasing a new version and reinstalling.)
+3. From the app's **Home** panel, use **Install app** to install it on your store.
+4. In the app's **Settings**, copy the **Client ID** and **Client secret**. These become the `SHOPIFY_CLIENT_ID` and `SHOPIFY_CLIENT_SECRET` environment variables.
+
+Note: the client credentials grant only works for apps created by your own organization and installed on your own store — which is exactly this setup.
+
+### Legacy admin custom app
+
+If your store still has an app under **Settings → Apps and sales channels → Develop apps** with an Admin API access token (starts with `shpat_`), you can use that instead: set it as `SHOPIFY_ACCESS_TOKEN` and skip the client ID/secret.
 
 ## Use from claude.ai (web + mobile)
 
@@ -54,8 +64,11 @@ Any Node.js host works. The repo includes a `Dockerfile`, so container platforms
 | Variable | Value |
 | --- | --- |
 | `SHOPIFY_DOMAIN` | `your-store.myshopify.com` |
-| `SHOPIFY_ACCESS_TOKEN` | Your `shpat_...` Admin API token (see above) |
+| `SHOPIFY_CLIENT_ID` | Dev Dashboard app client ID (see above) |
+| `SHOPIFY_CLIENT_SECRET` | Dev Dashboard app client secret |
 | `MCP_AUTH_TOKEN` | A long random secret, e.g. from `openssl rand -hex 32` |
+
+(For a legacy admin custom app, set `SHOPIFY_ACCESS_TOKEN` instead of the client ID/secret.)
 
 The container listens on `PORT` (default 3000) and serves the MCP endpoint at `/mcp/<MCP_AUTH_TOKEN>`, plus a `/healthz` health check.
 
@@ -88,7 +101,8 @@ npm run build
 ```bash
 claude mcp add shopify \
   --env SHOPIFY_DOMAIN=your-store.myshopify.com \
-  --env SHOPIFY_ACCESS_TOKEN=shpat_xxxxxxxxxxxx \
+  --env SHOPIFY_CLIENT_ID=xxxxxxxxxxxx \
+  --env SHOPIFY_CLIENT_SECRET=xxxxxxxxxxxx \
   -- node /absolute/path/to/Shopify-MCP/build/index.js
 ```
 
@@ -102,7 +116,8 @@ claude mcp add shopify \
       "args": ["/absolute/path/to/Shopify-MCP/build/index.js"],
       "env": {
         "SHOPIFY_DOMAIN": "your-store.myshopify.com",
-        "SHOPIFY_ACCESS_TOKEN": "shpat_xxxxxxxxxxxx"
+        "SHOPIFY_CLIENT_ID": "xxxxxxxxxxxx",
+        "SHOPIFY_CLIENT_SECRET": "xxxxxxxxxxxx"
       }
     }
   }
