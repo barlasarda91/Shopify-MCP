@@ -23,6 +23,8 @@ It runs in two modes from the same codebase:
 | `get-locations` | List inventory locations |
 | `adjust-inventory` | Add or remove available stock for a variant |
 | `list-discounts` | List automatic and code discounts with amounts, minimums, products, purchase type, and combination settings |
+| `create-automatic-discount` | Create an automatic amount-off-products discount (per item or per order, products/collections, minimums, purchase type, combinations) |
+| `update-automatic-discount` | Change an existing automatic discount's amount, per-item setting, minimum, purchase type, combinations, or dates |
 | `create-discount-code` | Create a percentage or fixed-amount discount code |
 
 Read tools accept Shopify search query syntax (e.g. `status:active`, `fulfillment_status:unfulfilled`, `created_at:>2026-01-01`) and IDs may be given as bare numbers or full `gid://shopify/...` IDs.
